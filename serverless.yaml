@@ -1,0 +1,56 @@
+service: serverless-frontcon-2020
+provider:
+  name: aws
+  runtime: nodejs12.x
+  timeout: 30
+  environment:
+    USERS_TABLE_NAME: "${self:service}-${opt:stage}-usersTable"
+    STAGE: ${opt:stage, 'local'}
+    DYNAMO_URL: "http://localhost:9000"
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:DescribeStream
+        - dynamodb:ListStreams
+        - dynamodb:BatchGetItem
+        - dynamodb:BatchWriteItem
+        - dynamodb:CreateTable
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+resources:
+  - Resources:
+    TakedaMaterials:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.USER_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+functions:
+  getUsers:
+    handler: 'handlers/users/getUsers.default'
+    tags:
+      Owner: Janis.Knets
+    name: ${self:service}-${opt:stage}-getUsers
+    description: returns a list of Users
+    events:
+    - http:
+        path: users
+        method: get
