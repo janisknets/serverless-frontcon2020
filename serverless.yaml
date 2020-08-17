@@ -24,25 +24,27 @@ provider:
         - dynamodb:BatchGetItem
         - dynamodb:BatchWriteItem
         - dynamodb:CreateTable
+      Resource: 
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-${opt:stage}-*Table"
 plugins:
   - serverless-plugin-typescript
   - serverless-offline
 resources:
   - Resources:
-    TakedaMaterials:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        TableName: ${self:provider.environment.USER_TABLE_NAME}
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+      FrontConUsersTable:
+        Type: AWS::DynamoDB::Table
+        DeletionPolicy: Retain
+        Properties:
+          TableName: ${self:provider.environment.USERS_TABLE_NAME}
+          AttributeDefinitions:
+            - AttributeName: id
+              AttributeType: S
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
 functions:
   getUsers:
     handler: 'handlers/users/getUsers.default'
@@ -54,3 +56,13 @@ functions:
     - http:
         path: users
         method: get
+  postUsers:
+    handler: 'handlers/users/postUsers.default'
+    tags:
+      Owner: Janis.Knets
+    name: ${self:service}-${opt:stage}-postUsers
+    description: creates a User from sent body
+    events:
+    - http:
+        path: users
+        method: post
