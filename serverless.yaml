@@ -1,11 +1,13 @@
 service: serverless-frontcon-2020
 provider:
   name: aws
+  region: eu-west-1
+  stage: ${opt:stage, 'local'}
   runtime: nodejs12.x
   timeout: 30
   environment:
-    USERS_TABLE_NAME: "${self:service}-${opt:stage}-usersTable"
-    STAGE: ${opt:stage, 'local'}
+    USERS_TABLE_NAME: "${self:service}-${self:provider.stage}-usersTable"
+    STAGE: ${self:provider.stage}
     DYNAMO_URL: "http://localhost:9000"
   iamRoleStatements:
     - Effect: Allow
@@ -24,33 +26,45 @@ provider:
         - dynamodb:BatchGetItem
         - dynamodb:BatchWriteItem
         - dynamodb:CreateTable
-      Resource: 
-        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-${opt:stage}-*Table"
+      Resource:
+        "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:service}-${self:provider.stage}-*Table"
 plugins:
   - serverless-plugin-typescript
+  - serverless-dynamodb-local
   - serverless-offline
+  - serverless-plugin-optimize
 resources:
-  - Resources:
-      FrontConUsersTable:
-        Type: AWS::DynamoDB::Table
-        DeletionPolicy: Retain
-        Properties:
-          TableName: ${self:provider.environment.USERS_TABLE_NAME}
-          AttributeDefinitions:
-            - AttributeName: id
-              AttributeType: S
-          KeySchema:
-            - AttributeName: id
-              KeyType: HASH
-          ProvisionedThroughput:
-            ReadCapacityUnits: 1
-            WriteCapacityUnits: 1
+  Resources:
+    FrontConUsersTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Delete
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
 functions:
+  helloWorld:
+    handler: 'handlers/helloWorld.default'
+    tags:
+      Owner: Janis.Knets
+    name: ${self:service}-${self:provider.stage}-helloWorld
+    description: returns basic message
+    events:
+    - http:
+        path: hello
+        method: get
   getUsers:
     handler: 'handlers/users/getUsers.default'
     tags:
       Owner: Janis.Knets
-    name: ${self:service}-${opt:stage}-getUsers
+    name: ${self:service}-${self:provider.stage}-getUsers
     description: returns a list of Users
     events:
     - http:
@@ -60,9 +74,18 @@ functions:
     handler: 'handlers/users/postUsers.default'
     tags:
       Owner: Janis.Knets
-    name: ${self:service}-${opt:stage}-postUsers
+    name: ${self:service}-${self:provider.stage}-postUsers
     description: creates a User from sent body
     events:
     - http:
         path: users
         method: post
+custom:
+  dynamodb:
+    stages:
+      - local
+    start:
+      migrate: true
+      port: 9000
+package:
+  individually: true
