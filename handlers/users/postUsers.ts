@@ -5,7 +5,7 @@ import User from '../../dynamo/users';
 export default async (event: APIGatewayProxyEvent, context: Context, callback: Callback) => {
 
   try {
-    const parsedBody = JSON.parse(event.body);
+    const parsedBody = JSON.parse(event.body || '{}');
 
     const user: any = await User.create(parsedBody);
 
