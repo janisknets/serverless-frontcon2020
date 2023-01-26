@@ -46,23 +46,14 @@ resources:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
 functions:
-  getUsers:
-    handler: 'handlers/users/getUsers.default'
+  echo:
+    handler: 'handlers/echo.default'
     tags:
       Owner: Janis.Knets
-    name: ${self:service}-${opt:stage}-getUsers
-    description: returns a list of Users
+    name: ${self:service}-${opt:stage}-echo
+    description: returns a pong message back
     events:
     - http:
-        path: users
+        path: echo
         method: get
-  postUsers:
-    handler: 'handlers/users/postUsers.default'
-    tags:
-      Owner: Janis.Knets
-    name: ${self:service}-${opt:stage}-postUsers
-    description: creates a User from sent body
-    events:
-    - http:
-        path: users
-        method: post
+
